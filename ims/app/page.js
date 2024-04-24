@@ -1,46 +1,64 @@
-"use client"
+"use client";
 import Header from "@/components/Header";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Image from "next/image";
 
 export default function Home() {
-  const [search, setSearch] = useState("")
+	const [search, setSearch] = useState("");
 	const [product, setProduct] = useState("");
-  const [quantity, setQuantity] = useState();
-  const [price, setPrice] = useState();
+	const [quantity, setQuantity] = useState(0);
+	const [price, setPrice] = useState(0);
+	const [products, setProducts] = useState([]);
 
-  const addProduct = async (e)=>{
-    e.preventDefault();
-    
-    const newProduct = {
-      product, quantity, price
-    }
+	useEffect(() => {
+		const getProduct = async () => {
+			try {
+				const response = await fetch("http://localhost:3000/api/getProducts");
+				const data = await response.json();
+				console.log(data);
+				setProducts(data.product);
+			} catch (error) {
+				console.error("Error", error);
+			}
+		};
+		getProduct();
+	}, []);
 
-    console.log(newProduct)
+	
 
-    try{
-      const response = await fetch(
-        "/api/products",
-        {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json"
-          },
-          body: JSON.stringify(newProduct)
-        }
-      );
+	const addProduct = async (item) => {
+		try {
+			console.log(item);
+			const response = await fetch("/api/addProducts", {
+				method: "POST",
+				headers: {
+					"Content-Type": "application/json",
+				},
+				body: JSON.stringify(item),
+			});
 
-      if(response.ok){
-        //Product added successfully
-        console.log("Product added Successfully");
-      }else{
-        console.error("Error adding product");
-      }
-    } catch(error){
-      console.error("Error", error);
-    }
+			if (response.ok) {
+				//Product added successfully
+				console.log({ message: "Product added Successfully", item });
+			} else {
+				console.error("Error adding product");
+			}
+		} catch (error) {
+			console.error("Error", error);
+		}
+	};
 
-  }
+	const postForm = (e) => {
+		e.preventDefault();
+
+		const newProduct = {
+			product,
+			quantity,
+			price,
+		};
+
+		addProduct(newProduct);
+	};
 
 	return (
 		<>
@@ -50,11 +68,13 @@ export default function Home() {
 					<h1 className="text-2xl font-bold mb-4">Search a Product</h1>
 					<div className="flex items-center mb-4">
 						<input
-              name="search"
-              id="search"
+							name="search"
+							id="search"
 							type="text"
-              value={search}
-              onChange={(e) => { setSearch(e.target.value) }}
+							value={search}
+							onChange={(e) => {
+								setSearch(e.target.value);
+							}}
 							placeholder="Search..."
 							className="border-2 border-gray-400 px-4 py-2 w-full mr-4 rounded-lg"
 						/>
@@ -65,44 +85,57 @@ export default function Home() {
 						</select>
 					</div>
 				</div>
-        <h1 className="text-2xl font-bold mt-8 mb-4">Add Product</h1>
-				<form id="addProduct" name="productForm" className="max-w-md mx-auto" onSubmit={addProduct}>
-					
+				<h1 className="text-2xl font-bold mt-8 mb-4">Add Product</h1>
+				<form
+					id="addProduct"
+					name="productForm"
+					className="max-w-md mx-auto"
+					onSubmit={postForm}>
 					<div className="mb-4">
-						<label htmlFor="product" className="block mb-2">Product Name:</label>
+						<label htmlFor="product" className="block mb-2">
+							Product Name:
+						</label>
 						<input
 							type="text"
-              name="product"
-              id="product"
-              value={product}
-              onChange={ (e) => setProduct(e.target.value) }
+							name="product"
+							id="product"
+							value={product}
+							onChange={(e) => setProduct(e.target.value)}
 							className="border-2 border-gray-400 px-4 py-2 w-full rounded-lg"
 						/>
 					</div>
 					<div className="mb-4">
-						<label htmlFor="quantity" className="block mb-2">Quantity:</label>
+						<label htmlFor="quantity" className="block mb-2">
+							Quantity:
+						</label>
 						<input
-              name="quantity"
-              id="quantity"
+							name="quantity"
+							id="quantity"
 							type="number"
-              value={quantity}
-              onChange={ (e) => setQuantity(e.target.value) }
+							required
+							value={quantity}
+							onChange={(e) => setQuantity(e.target.value)}
 							className="border-2 border-gray-400 px-4 py-2 w-full rounded-lg"
 						/>
 					</div>
 					<div className="mb-4">
-						<label htmlFor="price" className="block mb-2">Price:</label>
+						<label htmlFor="price" className="block mb-2">
+							Price:
+						</label>
 						<input
-              name="price"
-              id="price"
+							name="price"
+							id="price"
 							type="number"
-              value={price}
-              onChange={ (e) => setPrice(e.target.value) }
+							value={price}
+							required
+							onChange={(e) => setPrice(e.target.value)}
 							className="border-2 border-gray-400 px-4 py-2 w-full rounded-lg"
 						/>
 					</div>
 					{/* Add more input fields for additional product information if needed */}
-					<button className="bg-blue-500 rounded-lg p-1 hover:bg-blue-400">
+					<button
+						className="bg-blue-500 rounded-lg p-1 hover:bg-blue-400"
+						type="submit">
 						AddProduct
 					</button>
 				</form>
@@ -121,30 +154,19 @@ export default function Home() {
 						</thead>
 						<tbody>
 							{/* Replace the static data below with your dynamic data */}
-							<tr>
-								<td className="border border-gray-400 px-4 py-2">Product A</td>
-								<td className="border border-gray-400 px-4 py-2">10</td>
-                <td className="border border-gray-400 px-4 py-2">15</td>
-								{/* Add more table cells with product information */}
+							{ 
+								products.map((product) => (
+									<tr>
+								<td className="border border-gray-400 text-center px-4 py-2">{product.name}</td>
+								<td className="border border-gray-400 text-center px-4 py-2">{product.qty}</td>
+								<td className="border border-gray-400 text-center px-4 py-2">UGX {product.price} /=</td>
 							</tr>
-							<tr>
-								<td className="border border-gray-400 px-4 py-2">Product B</td>
-								<td className="border border-gray-400 px-4 py-2">15</td>
-                <td className="border border-gray-400 px-4 py-2">15</td>
-								{/* Add more table cells with product information */}
-							</tr>
-							{/* Add more rows for each product */}
-							<tr>
-								<td className="border border-gray-400 px-4 py-2">Product B</td>
-								<td className="border border-gray-400 px-4 py-2">15</td>
-                <td className="border border-gray-400 px-4 py-2">15</td>
-								{/* Add more table cells with product information */}
-							</tr>
+								))
+							}
 						</tbody>
 					</table>
 				</div>
 			</div>
 		</>
 	);
-
 }
